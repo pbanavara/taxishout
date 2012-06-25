@@ -1,9 +1,17 @@
+//Throughout the code, the default location has been set to your house
+//To reset this, search for HOMESETTING in this class. Remove and add the appropriate code
+//Also note that the current Location display always displays the current location irrespective of what I try to 
+//force it to show. So, there might not be a blinking Blue dot, if you test from a different location as of now. 
 package com.taxishout.main;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
@@ -49,7 +57,15 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 	final Runnable updateRunnable = new Runnable() {
         public void run() {
             //call the activity method that updates the UI
-        	mapView.getController().animateTo(myLocationOverlay.getMyLocation());
+        	
+        	//HOMESETTING
+        	//This section sets the current location to your home coordinates. Hide at final release
+        	int Lat = 13039805;
+        	int Lng = 77555108;
+        	GeoPoint g = new GeoPoint(Lat,Lng);
+        	mapView.getController().animateTo(g);
+        	//Uncomment the next line 
+        	//mapView.getController().animateTo(myLocationOverlay.getMyLocation());
 			setVis();
             
         }
@@ -70,13 +86,46 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 		later.setVisibility(View.VISIBLE);
 		now.setOnClickListener(this);
 	}
-	private String getData(int lat,int lng,int rad,int limit)
+	private String getData(int lat,int lng,float rad,int limit)
 	{
 		StringBuilder builder = new StringBuilder();
-		String url="http://www.myeur.org/showpoint?lat="+lat+"&lng="+lng+"&rad="+rad+"&limit="+limit;
+		Float Lat = (float) lat;
+		Float Lng = (float) lng;
+		Lat=(float) (Lat/1000000.0);
+		Lng=(float) (Lng/1000000.0);
+		
+		//HOMESETTING
+		//Remove these lines eventually. These lock the location to your house
+		Lat=(float) 13.039805;
+		Lng=(float) 77.555108; 
+		//End Removing
+		String url="https://api.parse.com/1/classes/taxishout";
+		String query="where=" +
+				"{\"location\":{\"$nearSphere\":{\"__type\":\"GeoPoint\"," +
+				"\"latitude\":"+Lat+"," +
+				"\"longitude\":"+Lng+"}," +
+				"\"$maxDistanceInKilometers\":"+rad+"}}";
+		try {
+			URI uri = new URI(
+			        "http", 
+			        "api.parse.com", 
+			        "/1/classes/taxishout",
+			        query,
+			        null);
+			url = uri.toASCIIString();
+		} catch (URISyntaxException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		Log.d("TEST",url);
 		HttpClient client = new DefaultHttpClient();
 		HttpGet httpGet = new HttpGet(url);
+		//Adding http headers
+		httpGet.setHeader("X-Parse-Application-Id", "3EN6GtbpYtprWOJyqHNaPjXrJixp66F2qTQVOS30");
+		httpGet.setHeader("X-Parse-REST-API-Key", "KTNYweSLVvp8hI2mR3ekXUCzbJW4fIqay21aQk1O");
+		httpGet.setHeader("Content-Type", "application/json");
 		try {
+			//Similar to xhr in js
 			HttpResponse response = client.execute(httpGet);
 			StatusLine statusLine = response.getStatusLine();
 			int statusCode = statusLine.getStatusCode();
@@ -90,6 +139,7 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 				}
 			} else {
 				return "FAIL";
+				//Returns FAIL on all errors. Else returns the JSON String
 			}
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
@@ -109,29 +159,33 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 		mapView.setBuiltInZoomControls(false);
 		mapView.setSatellite(true);
 		mapController = mapView.getController();
-		mapController.setZoom(15); // Zoon 1 is world view
+		mapController.setZoom(15); // Zoom 15 shows locations close to the user
+		
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,
 				0, new GeoUpdateHandler());
+		
 		myLocationOverlay = new MyLocationOverlay(this, mapView);
 		mapView.getOverlays().add(myLocationOverlay);
-		
+		//This is the basic overlay showing the compass and current location. Zoom controls hidden; you can pinch to zoom
 
 		myLocationOverlay.runOnFirstFix(new Runnable() {
 			public void run() {
 				
+				//Runnable called when the Location is first obtained. 
+				
 				doSomeHardWork();
+				//I cannot directly change the UI from a Runnable. So, I called a handler, which does the UI changes
 			}
 		});
-		//mapOverlays.remove(1);
-		//Log.d("JSON",mapOverlays.toString());
-		
+		//Setting Listeners
 		Button b = (Button)findViewById(R.id.now);
 		b.setOnClickListener(this);
 	}
 
 	@Override
 	protected boolean isRouteDisplayed() {
+		//Method required due to MapActivity. Useless otherwise
 		return false;
 	}
 
@@ -141,8 +195,15 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 		public void onLocationChanged(Location location) {
 			int lat = (int) (location.getLatitude() * 1E6);
 			int lng = (int) (location.getLongitude() * 1E6);
-			GeoPoint point = new GeoPoint(lat, lng);
-			mapController.animateTo(point); // mapController.setCenter(point);
+			
+			//HOMESETTING
+			//Setting current Location
+        	int Lat = 13039805;
+        	int Lng = 77555108;
+        	GeoPoint point = new GeoPoint(Lat, Lng);
+			//Uncomment next line
+			//GeoPoint point = new GeoPoint(lat, lng);
+			mapController.animateTo(point); // When a location is passed, goes to the point
 			
 		}
 
@@ -180,30 +241,58 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 		if(v.getId()==R.id.now)
 		{
 			GeoPoint g = myLocationOverlay.getMyLocation();
-			String JSONStr =getData(g.getLatitudeE6(),g.getLongitudeE6(),2,10);
+			String JSONStr =getData(g.getLatitudeE6(),g.getLongitudeE6(),(float) 2.0,10);
+			//If there is any Error in getting the data, the function returns FAIL
+			Log.d("JSON",JSONStr);
 			if(JSONStr!="FAIL")
 			{
 			try {
-				JSONArray jsonArray = new JSONArray(JSONStr);
+				JSONObject jsonObject = new JSONObject(JSONStr);
 				Drawable drawable = this.getResources().getDrawable(R.drawable.point);
+				//The drawable is the image that we put on the map
 				itemizedoverlay = new MyOverlays(drawable,this);
 				List<Overlay> mapOverlays = mapView.getOverlays();
+				//Removes all overlays from the map except the main location overlay, which has the compass, current location
+				//when the user presses the get button twice, the old results are erased and new ones displayed
 				while(mapOverlays.size()>2)
 					mapOverlays.remove(1);
-				for (int i = 0; i < jsonArray.length(); i++) {
-					JSONObject jsonObject = jsonArray.getJSONObject(i);
-					int Lat=jsonObject.getInt("Lattitude");
-					int Lng = jsonObject.getInt("Longitude");
-					Log.d("JSON",jsonObject.getString("Name"));
-					GeoPoint point = new GeoPoint(Lat, Lng);
-					OverlayItem overlayitem = new OverlayItem(point,"Driver",jsonObject.getString("Name"));
-					itemizedoverlay.addOverlay(overlayitem);
+				
+				JSONArray results = jsonObject.getJSONArray("results");
+				for (int i = 0; i < results.length(); i++) {
+					
+					JSONObject result = results.getJSONObject(i);
+					
+					String Details = result.getString("driverDetails");
+					String Name = result.getString("driverName");
+					int Rating = result.getInt("driverRating");
+					boolean isAvailable = result.getBoolean("isAvailable");
+					JSONObject Location = result.getJSONObject("location");
+					Log.d("JSON",Location.toString());
+					int Latitude = (int) (Location.getDouble("latitude")*1000000);
+					int Longitude = (int) (Location.getDouble("longitude")*1000000);
+					String CreatedAt = result.getString("createdAt");
+					String UpdatedAt = result.getString("updatedAt");
+					GeoPoint point = new GeoPoint(Latitude, Longitude);
+					String message = "Details:"+Details+
+					"\nName:"+Name + 
+					"\nRating:"+Rating;
+					if(isAvailable)
+					{
+						OverlayItem overlayitem = new OverlayItem(point,Details,message);
+						itemizedoverlay.addOverlay(overlayitem);
+						//Adding Point to the overlay
+							
+					}
 									
 				}
 				mapOverlays.add(itemizedoverlay);
+				
+				//adding overlay
 				Toast.makeText(getApplicationContext(), "Read your data!", Toast.LENGTH_LONG).show();
 			} catch (Exception e) {
 				e.printStackTrace();
+				Toast.makeText(getApplicationContext(), "Error parsing JSON!", Toast.LENGTH_LONG).show();
+				Log.e("JSONERROR",e.toString());
 			}
 			}
 			else
