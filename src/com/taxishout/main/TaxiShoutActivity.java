@@ -8,10 +8,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Date;
 import java.util.List;
 
 import org.apache.http.HttpEntity;
@@ -22,6 +20,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -54,6 +53,7 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 	private MyOverlays itemizedoverlay;
 	private MyLocationOverlay myLocationOverlay;
 	private final Handler myHandler = new Handler();
+	private ProgressDialog Progress;
 	final Runnable updateRunnable = new Runnable() {
         public void run() {
             //call the activity method that updates the UI
@@ -117,7 +117,6 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		Log.d("TEST",url);
 		HttpClient client = new DefaultHttpClient();
 		HttpGet httpGet = new HttpGet(url);
 		//Adding http headers
@@ -193,7 +192,9 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 
 		@Override
 		public void onLocationChanged(Location location) {
+			@SuppressWarnings("unused")
 			int lat = (int) (location.getLatitude() * 1E6);
+			@SuppressWarnings("unused")
 			int lng = (int) (location.getLongitude() * 1E6);
 			
 			//HOMESETTING
@@ -241,9 +242,13 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 		if(v.getId()==R.id.now)
 		{
 			GeoPoint g = myLocationOverlay.getMyLocation();
+			Progress = new ProgressDialog(v.getContext());
+			Progress.setCancelable(false);
+			Progress.setMessage("Downloading Driver Data");
+			Progress.show();
 			String JSONStr =getData(g.getLatitudeE6(),g.getLongitudeE6(),(float) 2.0,10);
+			Progress.hide();
 			//If there is any Error in getting the data, the function returns FAIL
-			Log.d("JSON",JSONStr);
 			if(JSONStr!="FAIL")
 			{
 			try {
@@ -261,21 +266,27 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 				for (int i = 0; i < results.length(); i++) {
 					
 					JSONObject result = results.getJSONObject(i);
-					
 					String Details = result.getString("driverDetails");
 					String Name = result.getString("driverName");
 					int Rating = result.getInt("driverRating");
 					boolean isAvailable = result.getBoolean("isAvailable");
 					JSONObject Location = result.getJSONObject("location");
-					Log.d("JSON",Location.toString());
 					int Latitude = (int) (Location.getDouble("latitude")*1000000);
 					int Longitude = (int) (Location.getDouble("longitude")*1000000);
-					String CreatedAt = result.getString("createdAt");
-					String UpdatedAt = result.getString("updatedAt");
 					GeoPoint point = new GeoPoint(Latitude, Longitude);
+					GeoPoint MyLoc = myLocationOverlay.getMyLocation();
+					//HOMESETTING
+					//comment these two lines, uncomment the other two in future
+					
+					result.put("MYLAT",13039805);
+					result.put("MYLNG",77555108);
+					
+					//result.put("MYLAT",MyLoc.getLatitudeE6());
+					//result.put("MYLNG",MyLoc.getLongitudeE6());
 					String message = "Details:"+Details+
 					"\nName:"+Name + 
 					"\nRating:"+Rating;
+					message = result.toString();
 					if(isAvailable)
 					{
 						OverlayItem overlayitem = new OverlayItem(point,Details,message);
@@ -285,6 +296,7 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 					}
 									
 				}
+				
 				mapOverlays.add(itemizedoverlay);
 				
 				//adding overlay
