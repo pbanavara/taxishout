@@ -28,6 +28,7 @@ import org.apache.http.params.HttpParams;
 	import org.json.JSONException;
 	import org.json.JSONObject;
 
+import android.app.Activity;
 	import android.app.AlertDialog;
 	import android.app.PendingIntent;
 	import android.app.ProgressDialog;
@@ -37,6 +38,7 @@ import org.apache.http.params.HttpParams;
 	import android.graphics.drawable.Drawable;
 	import android.location.Address;
 	import android.location.Geocoder;
+import android.net.Uri;
 	import android.os.Handler;
 	import android.telephony.SmsManager;
 	import android.util.Log;
@@ -76,6 +78,17 @@ import com.google.android.maps.OverlayItem;
 			    dialog.setCancelable(false)
 			    	.setView(input)
 			    	.setMessage(message)
+			    	.setNeutralButton("Call driver", new DialogInterface.OnClickListener(){
+
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							// TODO Auto-generated method stub
+							Intent i = new Intent(Intent.ACTION_CALL);
+							i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+							i.setData(Uri.parse("tel:"+DriverNumber));
+							context.startActivity(i);
+							
+						}})
 			    	.setPositiveButton("Book Cab", new DialogInterface.OnClickListener() {
 			           public void onClick(DialogInterface dialog, int id) {
 			               //Set isAvaiable to false
