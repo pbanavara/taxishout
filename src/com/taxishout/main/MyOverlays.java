@@ -167,6 +167,7 @@ import com.google.android.maps.OverlayItem;
 		   protected boolean onTap(int index) {
 			  //Executed when the overlay item is tapped
 			  final OverlayItem item = mapOverlays.get(index);
+			  Log.d("JSON","PAST");
 		      data_string = item.getSnippet();
 		      ProgressBar = new ProgressDialog(context);
 		      ProgressBar.setCancelable(false);
@@ -176,7 +177,7 @@ import com.google.android.maps.OverlayItem;
 		      ProgressBar.setMax(100);
 		      ProgressBarMessage = "Parsing Driver Data";
 		      ProgressBar.show();
-		      
+		      Log.d("JSON","HERE");
 		      new Thread(new Runnable() {
 		    	  //Thread handles the Progress Bar Updating. The other Heavy stuff happens in a different thread
 		    	  public void run() {

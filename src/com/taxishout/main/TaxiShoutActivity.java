@@ -291,16 +291,23 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 					{
 						OverlayItem overlayitem = new OverlayItem(point,Details,message);
 						itemizedoverlay.addOverlay(overlayitem);
+						Log.d("JSON",itemizedoverlay.toString());
 						//Adding Point to the overlay
 							
 					}
 									
 				}
+				if(itemizedoverlay.size()==0)
+					Toast.makeText(getApplicationContext(), "No driver around you!", Toast.LENGTH_LONG).show();
 				
-				mapOverlays.add(itemizedoverlay);
+				else
+				{
+					mapOverlays.add(itemizedoverlay);
+					Toast.makeText(getApplicationContext(), "Read your data!", Toast.LENGTH_LONG).show();
+				}
 				
 				//adding overlay
-				Toast.makeText(getApplicationContext(), "Read your data!", Toast.LENGTH_LONG).show();
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 				Toast.makeText(getApplicationContext(), "Error parsing JSON!", Toast.LENGTH_LONG).show();
