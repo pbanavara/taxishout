@@ -29,8 +29,11 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.GestureDetector.OnDoubleTapListener;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -70,6 +73,7 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
             
         }
     };
+    public boolean toggler;
     private void doSomeHardWork()
     {
          //.... hard work
@@ -101,7 +105,8 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 		//End Removing
 		String url="https://api.parse.com/1/classes/taxishout";
 		String query="where=" +
-				"{\"location\":{\"$nearSphere\":{\"__type\":\"GeoPoint\"," +
+				"{\"isAvailable\":true," +
+				"\"location\":{\"$nearSphere\":{\"__type\":\"GeoPoint\"," +
 				"\"latitude\":"+Lat+"," +
 				"\"longitude\":"+Lng+"}," +
 				"\"$maxDistanceInKilometers\":"+rad+"}}";
@@ -152,12 +157,13 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 	public void onCreate(Bundle bundle) {
 		super.onCreate(bundle);
 		setContentView(R.layout.main); // bind the layout to the activity
-
+		toggler = false;
 		// Configure the Map
 		mapView = (MapView) findViewById(R.id.mapview);
 		mapView.setBuiltInZoomControls(false);
 		mapView.setSatellite(true);
 		mapController = mapView.getController();
+		//this.setOnTouchListener();
 		mapController.setZoom(15); // Zoom 15 shows locations close to the user
 		
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -246,7 +252,8 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 			Progress.setCancelable(false);
 			Progress.setMessage("Downloading Driver Data");
 			Progress.show();
-			String JSONStr =getData(g.getLatitudeE6(),g.getLongitudeE6(),(float) 2.0,10);
+			String JSONStr =getData(g.getLatitudeE6(),g.getLongitudeE6(),(float) 200.0,10);
+			Log.d("JSON",JSONStr);
 			Progress.hide();
 			//If there is any Error in getting the data, the function returns FAIL
 			if(JSONStr!="FAIL")
@@ -320,4 +327,5 @@ public class TaxiShoutActivity extends MapActivity implements OnClickListener{
 			}
 		}
 	}
+	
 }
