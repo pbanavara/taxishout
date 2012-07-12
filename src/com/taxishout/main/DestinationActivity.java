@@ -1,5 +1,8 @@
 package com.taxishout.main;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 import java.util.Stack;
 
 import org.json.JSONArray;
@@ -15,6 +18,8 @@ import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -56,8 +61,6 @@ public class DestinationActivity extends MapActivity implements OnTouchListener,
 		    number = (String) extras.get("num");
 		    objectId = extras.getInt("id");
 		    st = new Stack();
-		    st.push(lat);
-		    st.push(lng);
 		    Log.d("JSON",address);
 		}
 		Button b = (Button) findViewById(R.id.later);
@@ -73,7 +76,12 @@ public class DestinationActivity extends MapActivity implements OnTouchListener,
 		//this.setOnTouchListener();
 		mapController.setZoom(zoomlevel); // Zoom 15 shows locations close to the user
 		GeoPoint g = new GeoPoint(lat,lng);
-    	mapView.getController().animateTo(g);
+		st.push(g.getLatitudeE6());
+		st.push(g.getLongitudeE6());
+		mapView.getController().animateTo(g);
+				
+		
+    	
 	}
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
@@ -165,7 +173,42 @@ public class DestinationActivity extends MapActivity implements OnTouchListener,
 					.findViewById(R.id.editTextDialogUserInput);
 			userInput.setHint("Enter a custom message");
 			TextView tv = (TextView) promptsView.findViewById(R.id.textView1);
-			tv.setText(message);
+			Geocoder gc = new Geocoder(getBaseContext(),Locale.getDefault());
+	    	int lngMD = (Integer) st.pop();
+	    	int latMD = (Integer) st.pop();
+	    	st.push(latMD);
+	    	st.push(lngMD);
+	    	double Lati = latMD/1000000.0;
+	    	double Longi = lngMD/1000000.0;
+	    	
+	    	try {
+				List<Address> addresses = gc.getFromLocation(Lati, Longi, 1);
+				Log.d("JSON",addresses.toString());
+				String destAddress="";
+				if(addresses.size()<1)
+				{
+					Log.d("ADDRESS","NOT FOUND!");
+					
+				}
+				else 
+				{
+					int j = 0;
+					Address gen = addresses.get(0);
+					Log.d("JSON",gen.getLocality());
+					while(j<=gen.getMaxAddressLineIndex())
+					{
+						destAddress =destAddress+gen.getAddressLine(j)+",";
+						j++;
+					}
+					
+					
+					tv.setText(message + "Destination is :"+destAddress);	
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			// set dialog message
 			alertDialogBuilder
 				.setCancelable(false)
@@ -173,7 +216,10 @@ public class DestinationActivity extends MapActivity implements OnTouchListener,
 				  new DialogInterface.OnClickListener() {
 				    public void onClick(DialogInterface dialog,int id) {
 				    	//Set isAvaiable to false
-						setUnavailable(objectId);
+						//get address first
+				    	
+				    	
+				    	setUnavailable(objectId);
 						//Sending SMS; PendingIntent activities to be added
 						String sms = "New Client Request" + "\n" + 
 						"Location:" + address + "\nComments:" + userInput.getText();
